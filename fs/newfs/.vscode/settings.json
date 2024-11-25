@@ -1,6 +1,7 @@
 {
     "files.associations": {
         "type_traits": "cpp",
-        "newfs.h": "c"
+        "newfs.h": "c",
+        "cmath": "cpp"
     }
 }

@@ -72,12 +72,14 @@ typedef enum newfs_file_type {
 
 #define NEWFS_INODES_PER_BLK                16
 #define NEWFS_INO_OFS(ino) \
-    (newfs_super.data_map_offset + ((ino) / NEWFS_INODES_PER_BLK) * NEWFS_BLK_SZ() + ((ino) % NEWFS_INODES_PER_BLK) * sizeof(struct newfs_inode_d))
+    (newfs_super.ino_offset + ((ino) / NEWFS_INODES_PER_BLK) * NEWFS_BLK_SZ() + ((ino) % NEWFS_INODES_PER_BLK) * sizeof(struct newfs_inode_d))
 #define NEWFS_DATA_OFS(ino)               (newfs_super.data_offset + NEWFS_BLKS_SZ(ino))
 
 #define NEWFS_IS_DIR(pinode)              (pinode->dentry->ftype == NEWFS_DIR)
 #define NEWFS_IS_REG(pinode)              (pinode->dentry->ftype == NEWFS_REG_FILE)
 #define NEWFS_IS_SYM_LINK(pinode)         (pinode->dentry->ftype == NEWFS_SYM_LINK)
+#define NEWFS_DENTRYS_PER_BLK             (NEWFS_BLK_SZ() / sizeof(struct newfs_dentry_d))
+
 
 //超级块
 struct newfs_super {
@@ -110,7 +112,7 @@ struct newfs_super {
 
     struct newfs_dentry* root_dentry; //根目录索引
     int ino_max;                // 最大支持inode数
-    int blks_nums;              //逻辑块块数
+    int data_max;              //逻辑块块数
 };
 
 struct newfs_super_d{
@@ -138,7 +140,7 @@ struct newfs_super_d{
     int data_blks;              //数据块占用逻辑块数量
 
     int ino_max;                // 最大支持inode数
-    int blks_nums;              //逻辑块块数
+    int data_max;              //逻辑块块数
 
 };
 
@@ -148,8 +150,8 @@ struct newfs_inode {
     int                blk_pointers[NEWFS_DATA_PER_FILE]; /*数据块地址指针*/
     uint8_t*           data[NEWFS_DATA_PER_FILE];     /* 数据块内容指针（可固定分配）*/
     int                link;                          /* 链接数，默认为1 */
-    struct newfs_dentry* dentry;                        /* 指向该inode的dentry */
-    struct newfs_dentry* dentrys;                       /* 所有目录项 */
+    struct newfs_dentry* dentry;                        /* 指向该inode的目录dentrt或者文件dentry */
+    struct newfs_dentry* dentrys;                       /* 如果是该inode是目录，dentrys指向其子目录的dentray链表的首个 */
     char               target_path[NEWFS_MAX_FILE_NAME];/* store traget path when it is a symlink */
     NEWFS_FILE_TYPE    ftype;
     int                dir_cnt;                      // 如果是目录类型文件，下面有几个目录项
@@ -182,4 +184,15 @@ struct newfs_dentry_d {
     NEWFS_FILE_TYPE     ftype;                     /*该目录文件或者普通文件*/
 };
 
+
+static inline struct newfs_dentry* new_dentry(char * fname, NEWFS_FILE_TYPE ftype) {
+    struct newfs_dentry * dentry = (struct newfs_dentry *)malloc(sizeof(struct newfs_dentry));
+    memset(dentry, 0, sizeof(struct newfs_dentry));
+    NEWFS_ASSIGN_FNAME(dentry, fname);
+    dentry->ftype   = ftype;
+    dentry->ino     = -1;  
+    dentry->inode   = NULL;
+    dentry->parent  = NULL;
+    dentry->brother = NULL;                                               
+}
 #endif /* _TYPES_H_ */

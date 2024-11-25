@@ -34,8 +34,8 @@ int 			   newfs_driver_write(int offset, uint8_t *in_content, int size);
 int 			   newfs_mount(struct custom_options options);
 int 			   newfs_umount();
 
-int 			   mewfs_alloc_dentry(struct newfs_inode * inode, struct newfs_dentry * dentry);
-int 			   mewfs_drop_dentry(struct newfs_inode * inode, struct newfs_dentry * dentry);
+int 			   newfs_alloc_dentry(struct newfs_inode * inode, struct newfs_dentry * dentry, boolean judge);
+int 			   newfs_drop_dentry(struct newfs_inode * inode, struct newfs_dentry * dentry);
 struct newfs_inode*  newfs_alloc_inode(struct newfs_dentry * dentry);
 int 			   newfs_sync_inode(struct newfs_inode * inode);
 int 			   newfs_drop_inode(struct newfs_inode * inode);
