@@ -1,6 +1,7 @@
 #define _XOPEN_SOURCE 700
 
-#include "../include/newfs.h"
+#include "newfs.h"
+#include "types.h"
 
 /******************************************************************************
 * SECTION: 宏定义
@@ -67,9 +68,11 @@ void* newfs_init(struct fuse_conn_info * conn_info) {
  */
 void newfs_destroy(void* p) {
 	/* TODO: 在这里进行卸载 */
-	
-	ddriver_close(newfs_super.driver_fd);
-
+	if (newfs_umount() != NEWFS_ERROR_NONE) {
+		NEWFS_DBG("[%s] unmount error\n", __func__);
+		fuse_exit(fuse_get_context()->fuse);
+		return;
+	}
 	return;
 }
 

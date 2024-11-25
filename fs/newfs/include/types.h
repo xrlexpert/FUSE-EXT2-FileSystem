@@ -67,12 +67,12 @@ typedef enum newfs_file_type {
 
 
 
-#define NEWFS_ASSIGN_FNAME(psfs_dentry, _fname) \ 
-    (memcpy(psfs_dentry->fname, _fname, strlen(_fname)))
+#define NEWFS_ASSIGN_FNAME(psfs_dentry, _fname) \
+(memcpy(psfs_dentry->fname, _fname, strlen(_fname)))
 
-#define NEWFS_INODES_PER_BLK                (NEWFS_BLK_SZ() / NEWFS_ROUND_UP(sizeof(struct newfs_inode_d), UINT32_BITS))
+#define NEWFS_INODES_PER_BLK                16
 #define NEWFS_INO_OFS(ino) \
-    (newfs_super.data_map_offset + ((ino) / NEWFS_INODES_PER_BLK) * NEWFS_BLK_SZ() + ((ino) % NEWFS_INODES_PER_BLK) * NEWFS_ROUND_UP(sizeof(struct newfs_inode_d), UINT32_BITS))
+    (newfs_super.data_map_offset + ((ino) / NEWFS_INODES_PER_BLK) * NEWFS_BLK_SZ() + ((ino) % NEWFS_INODES_PER_BLK) * sizeof(struct newfs_inode_d))
 #define NEWFS_DATA_OFS(ino)               (newfs_super.data_offset + NEWFS_BLKS_SZ(ino))
 
 #define NEWFS_IS_DIR(pinode)              (pinode->dentry->ftype == NEWFS_DIR)
@@ -81,7 +81,7 @@ typedef enum newfs_file_type {
 
 //超级块
 struct newfs_super {
-    uint32_t magic;             //幻数
+    uint32_t magic_num;             //幻数
     int driver_fd;              //设备文件描述符
 
     boolean is_mounted;         //是否被挂载
@@ -100,6 +100,7 @@ struct newfs_super {
 
     int data_map_offset;        //数据块位图偏移
     int data_map_blks;          //数据块位图占用逻辑块数量
+    uint8_t* data_map;
 
     int ino_offset;             //索引节点的偏移
     int ino_blks;               //索引节点占用逻辑块数量
@@ -114,7 +115,7 @@ struct newfs_super {
 
 struct newfs_super_d{
 
-    uint32_t magic;             //幻数
+    uint32_t magic_num;             //幻数
 
     int blks_size;              // 逻辑块大小
     int io_size;                //IO大小
@@ -144,7 +145,8 @@ struct newfs_super_d{
 struct newfs_inode {
     uint32_t           ino;                           // 在inode位图中的下标
     int                size;                          /* 文件已占用空间 */
-    uint8_t*           data;                          /* 数据块指针（可固定分配）*/
+    int                blk_pointers[NEWFS_DATA_PER_FILE]; /*数据块地址指针*/
+    uint8_t*           data[NEWFS_DATA_PER_FILE];     /* 数据块内容指针（可固定分配）*/
     int                link;                          /* 链接数，默认为1 */
     struct newfs_dentry* dentry;                        /* 指向该inode的dentry */
     struct newfs_dentry* dentrys;                       /* 所有目录项 */
@@ -156,6 +158,8 @@ struct newfs_inode {
 struct newfs_inode_d {
     uint32_t           ino;                           // 在inode位图中的下标
     int                size;                          /* 文件已占用空间 */
+    int                blk_pointers[NEWFS_DATA_PER_FILE];
+    uint8_t*           data[NEWFS_DATA_PER_FILE];    /* 数据块指针（可固定分配）*/
     int                link;                          /* 链接数，默认为1 */
     char               target_path[NEWFS_MAX_FILE_NAME];/* store traget path when it is a symlink */
     NEWFS_FILE_TYPE    ftype;
@@ -167,7 +171,7 @@ struct newfs_dentry {
     char                fname[MAX_NAME_LEN];        /*该文件的名字*/
     uint32_t            ino;                       /*该目录项指向的ino节点*/
     NEWFS_FILE_TYPE     ftype;                     /*该目录文件或者普通文件*/
-    struct newfs_dentry* parent;                        /* 父亲Inode的dentry */
+    struct newfs_dentry* parent;                   /* 父亲Inode的dentry */
     struct newfs_dentry* brother; 
     struct newfs_inode*  inode;    
 };

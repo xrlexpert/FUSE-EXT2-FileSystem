@@ -14,7 +14,7 @@
 #include "types.h"
 #include "stdint.h"
 
-#define NEWFS_MAGIC           0x3334  /* TODO: Define by yourself */
+#define NEWFS_MAGIC_NUM           0x3334  /* TODO: Define by yourself */
 #define NEWFS_DEFAULT_PERM    0777   /* 全权限打开 */
 
 /******************************************************************************
