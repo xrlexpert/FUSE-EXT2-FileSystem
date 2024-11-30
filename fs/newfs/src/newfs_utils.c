@@ -80,7 +80,7 @@ int newfs_alloc_dentry(struct newfs_inode* inode, struct newfs_dentry* dentry, b
             {
                 for (bit_cursor = 0; bit_cursor < UINT8_BITS; bit_cursor++) {          //比特位
                     if((newfs_super.data_map[byte_cursor] & (0x1 << bit_cursor)) == 0) {    
-                                                            /* 当前ino_cursor位置空闲 */
+                                                            /* 当前data_cursor位置空闲 */
                         newfs_super.data_map[byte_cursor] |= (0x1 << bit_cursor);
                         is_find_free_entry = TRUE;           
                         break;
@@ -159,14 +159,15 @@ struct newfs_inode* newfs_read_inode(struct newfs_dentry * dentry, int ino) {
         }
     }
     else if (NEWFS_IS_REG(inode)) {
-        // for(int i = 0;i <NEWFS_DATA_PER_FILE; i++){
-        //     inode->data[i] = (uint8_t *)malloc(NEWFS_BLK_SZ());
-        //     if (newfs_driver_read(NEWFS_DATA_OFS(inode->blk_pointers[i]), (uint8_t *)inode->data[i], NEWFS_BLK_SZ()) != NEWFS_ERROR_NONE) {
-        //         NEWFS_DBG("[%s] io error\n", __func__);
-        //         return NULL;                    
-        //     }
-        //     printf("    read file:%s, offset:%d\n", inode->dentry->fname, NEWFS_DATA_OFS(inode->blk_pointers[i]));
-        // }
+        for(int i = 0;i <NEWFS_DATA_PER_FILE; i++){
+            if(inode->blk_pointers[i] == -1) continue; //如果尚未分配，直接跳过
+            inode->data[i] = (uint8_t *)malloc(NEWFS_BLK_SZ());
+            if (newfs_driver_read(NEWFS_DATA_OFS(inode->blk_pointers[i]), (uint8_t *)inode->data[i], NEWFS_BLK_SZ()) != NEWFS_ERROR_NONE) {
+                NEWFS_DBG("[%s] io error\n", __func__);
+                return NULL;                    
+            }
+            printf("    read file:%s, offset:%d\n", inode->dentry->fname, NEWFS_DATA_OFS(inode->blk_pointers[i]));
+        }
     }
     return inode;
 }
@@ -199,7 +200,6 @@ struct newfs_inode* newfs_alloc_inode(struct newfs_dentry * dentry) {
             break;
         }
     }
-
     if (!is_find_free_entry || ino_cursor == newfs_super.ino_max){
         printf("分配失败！！\n");
         return -NEWFS_ERROR_NOSPACE;
@@ -213,18 +213,17 @@ struct newfs_inode* newfs_alloc_inode(struct newfs_dentry * dentry) {
     dentry->ino   = inode->ino;
                                                       /* inode指回dentry */
     inode->dentry = dentry;
-    
     inode->dir_cnt = 0;
     inode->dentrys = NULL;
     
     if (NEWFS_IS_REG(inode)) {
         for(int i = 0;i < NEWFS_DATA_PER_FILE; i++){
             inode->data[i] = (uint8_t *)malloc(NEWFS_BLK_SZ());
+            inode->blk_pointers[i] = -1;           //采用动态分配，初始化-1
         }
         
     }
     printf("分配成功！！\n");
-
     return inode;
 }
 
@@ -290,14 +289,15 @@ int newfs_sync_inode(struct newfs_inode * inode) {
         }
     }
     else if (NEWFS_IS_REG(inode)) { /* 如果当前inode是文件，那么数据是文件内容，直接写即可 */
-        // for(int i = 0;i < NEWFS_DATA_PER_FILE; i++){
-        //     if (newfs_driver_write(NEWFS_DATA_OFS(inode->blk_pointers[i]), inode->data[i], NEWFS_BLK_SZ()) != NEWFS_ERROR_NONE) {
-        //         NEWFS_DBG("[%s] io error\n", __func__);
-        //         return -NEWFS_ERROR_IO;
-        //     }
-        //     printf("    write file:%s, offset:%d\n", inode->dentry->fname, NEWFS_DATA_OFS(inode->blk_pointers[i]));
+        for(int i = 0;i < NEWFS_DATA_PER_FILE; i++){
+            if(inode->blk_pointers[i] == -1) continue; //如果尚未分配，直接跳过
+            if (newfs_driver_write(NEWFS_DATA_OFS(inode->blk_pointers[i]), inode->data[i], NEWFS_BLK_SZ()) != NEWFS_ERROR_NONE) {
+                NEWFS_DBG("[%s] io error\n", __func__);
+                return -NEWFS_ERROR_IO;
+            }
+            printf("    write file:%s, offset:%d\n", inode->dentry->fname, NEWFS_DATA_OFS(inode->blk_pointers[i]));
 
-        // }
+        }
     }
     return NEWFS_ERROR_NONE;
 }

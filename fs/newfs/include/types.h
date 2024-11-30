@@ -174,8 +174,8 @@ struct newfs_dentry {
     uint32_t            ino;                       /*该目录项指向的ino节点*/
     NEWFS_FILE_TYPE     ftype;                     /*该目录文件或者普通文件*/
     struct newfs_dentry* parent;                   /* 父亲Inode的dentry */
-    struct newfs_dentry* brother; 
-    struct newfs_inode*  inode;    
+    struct newfs_dentry* brother;                  /*同一级目录下的兄弟目录项*/
+    struct newfs_inode*  inode;                    /*该目录项对应的inode*/
 };
 
 struct newfs_dentry_d {
