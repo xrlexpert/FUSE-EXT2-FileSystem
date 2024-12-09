@@ -148,24 +148,26 @@ struct newfs_inode {
     uint32_t           ino;                           // 在inode位图中的下标
     int                size;                          /* 文件已占用空间 */
     int                blk_pointers[NEWFS_DATA_PER_FILE]; /*数据块地址指针*/
-    uint8_t*           data[NEWFS_DATA_PER_FILE];     /* 数据块内容指针（可固定分配）*/
+    uint8_t*           data;     /* 数据块内容指针（可固定分配）*/
     int                link;                          /* 链接数，默认为1 */
     struct newfs_dentry* dentry;                        /* 指向该inode的目录dentrt或者文件dentry */
     struct newfs_dentry* dentrys;                       /* 如果是该inode是目录，dentrys指向其子目录的dentray链表的首个 */
     char               target_path[NEWFS_MAX_FILE_NAME];/* store traget path when it is a symlink */
     NEWFS_FILE_TYPE    ftype;
     int                dir_cnt;                      // 如果是目录类型文件，下面有几个目录项
+    int                allocated_nums;
 };
 
 struct newfs_inode_d {
     uint32_t           ino;                           // 在inode位图中的下标
     int                size;                          /* 文件已占用空间 */
     int                blk_pointers[NEWFS_DATA_PER_FILE];
-    uint8_t*           data[NEWFS_DATA_PER_FILE];    /* 数据块指针（可固定分配）*/
+    uint8_t*           data;    /* 数据块指针（可固定分配）*/
     int                link;                          /* 链接数，默认为1 */
     char               target_path[NEWFS_MAX_FILE_NAME];/* store traget path when it is a symlink */
     NEWFS_FILE_TYPE    ftype;
     int                dir_cnt;                      // 如果是目录类型文件，下面有几个目录项
+    int                allocated_nums;
 };
 
 
